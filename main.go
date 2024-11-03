@@ -52,7 +52,7 @@ func (b1 BigInt) Add(b2 BigInt) (BigInt, uint32) {
 		temp := b1.parts[i] + b2.parts[i] + carry
 		// result.parts[i] = temp & 0xFFFFFFFF
 		result.parts[i] = temp
-		carry = temp >> 32 // перенос, если превышает 32 бита
+		carry = uint32(temp >> 32) // перенос, если превышает 32 бита
 	}
 
 	return result, carry
@@ -60,8 +60,8 @@ func (b1 BigInt) Add(b2 BigInt) (BigInt, uint32) {
 
 func main() {
 	// Пример использования
-	hexString1 := "3" // Первая hex-строка
-	hexString2 := "3" // Вторая hex-строка
+	hexString1 := "11100000000ffffff"                // Первая hex-строка
+	hexString2 := "ffffffffffffffffffffffffffffffff" // Вторая hex-строка
 
 	bigInt1, err := HexToBigInt(hexString1)
 	if err != nil {
