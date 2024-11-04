@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 )
 
@@ -11,15 +10,6 @@ type BigInt struct {
 }
 
 func HexToBigInt(hexStr string) (BigInt, error) {
-	hexStr = removeSpaces(hexStr)
-	if len(hexStr)%2 != 0 {
-		hexStr = "0" + hexStr
-	}
-
-	if len(hexStr) > 32 {
-		return BigInt{}, errors.New("hex string is too long")
-	}
-
 	data, err := hex.DecodeString(hexStr)
 	if err != nil {
 		return BigInt{}, err
@@ -33,54 +23,66 @@ func HexToBigInt(hexStr string) (BigInt, error) {
 	return bigInt, nil
 }
 
-func removeSpaces(s string) string {
-	result := ""
-	for _, c := range s {
-		if c != ' ' {
-			result += string(c)
-		}
-	}
-	return result
-}
-
-func (b1 BigInt) Add(b2 BigInt) (BigInt, uint32) {
-	var carry uint32
+func (b1 BigInt) Add(b2 BigInt) (BigInt, uint64) {
+	var carry uint64 = 0
 	var result BigInt
 
 	for i := 0; i < len(b1.parts); i++ {
-		// Сложение с учетом переноса
-		temp := b1.parts[i] + b2.parts[i] + carry
-		// result.parts[i] = temp & 0xFFFFFFFF
-		result.parts[i] = temp
-		carry = uint32(temp >> 32) // перенос, если превышает 32 бита
+		temp := uint64(b1.parts[i]) + uint64(b2.parts[i]) + carry
+		result.parts[i] = uint32(temp & 0xFFFFFFFF)
+		carry = temp >> 32
+	}
+
+	if carry > 0 {
+		result.parts[len(result.parts)-1] += uint32(carry)
 	}
 
 	return result, carry
 }
 
+func (b BigInt) ToHexString() string {
+	hexParts := make([]byte, 0, 32)
+
+	for i := 0; i < len(b.parts); i++ {
+		partHex := fmt.Sprintf("%08x", b.parts[i])
+		hexParts = append(hexParts, partHex...)
+	}
+
+	return string(hexParts)
+}
+
 func main() {
-	// Пример использования
-	hexString1 := "11100000000ffffff"                // Первая hex-строка
-	hexString2 := "ffffffffffffffffffffffffffffffff" // Вторая hex-строка
+	hexString1 := "FFFFFFFF"
+	hexString2 := "FFFFFFFF"
 
-	bigInt1, err := HexToBigInt(hexString1)
+	b1, err := HexToBigInt(hexString1)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error converting hex to BigInt:", err)
 		return
 	}
 
-	bigInt2, err := HexToBigInt(hexString2)
+	b2, err := HexToBigInt(hexString2)
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error converting hex to BigInt:", err)
 		return
 	}
 
-	// Сложение двух BigInt
-	sum, carry := bigInt1.Add(bigInt2)
+	fmt.Printf("BigInt1 parts: %v\n", b1.parts)
+	fmt.Printf("BigInt2 parts: %v\n", b2.parts)
 
-	// Печать результата
-	fmt.Printf("BigInt1 parts: %v\n", bigInt1.parts)
-	fmt.Printf("BigInt2 parts: %v\n", bigInt2.parts)
-	fmt.Printf("Сумма: %v\n", sum.parts)
+	result, carry := b1.Add(b2)
+
+	fmt.Printf("Сумма: %v\n", result.parts)
 	fmt.Printf("Перенос: %d\n", carry)
+
+	fmt.Printf("Полный результат (включая перенос):\n")
+	for i := 0; i < len(result.parts); i++ {
+		fmt.Printf("Part %d: %d\n", i, result.parts[i])
+	}
+	if carry > 0 {
+		fmt.Printf("Carry: %d\n", carry)
+	}
+
+	hexResult := result.ToHexString()
+	fmt.Printf("Результат в шестнадцатеричном формате: %s\n", hexResult)
 }
