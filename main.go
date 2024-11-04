@@ -33,11 +33,20 @@ func (b1 BigInt) Add(b2 BigInt) (BigInt, uint64) {
 		carry = temp >> 32
 	}
 
-	if carry > 0 {
-		result.parts[len(result.parts)-1] += uint32(carry)
+	return result, carry
+}
+
+func (b1 BigInt) Subb(b2 BigInt) (BigInt, uint32) {
+	var borrow uint32 = 0
+	var result BigInt
+
+	for i := 0; i < len(b1.parts); i++ {
+		temp := int64(b1.parts[i]) - int64(b2.parts[i]) - int64(borrow)
+		borrow = uint32((temp >> 32) & 1)
+		result.parts[i] = uint32(temp & 0xFFFFFFFF)
 	}
 
-	return result, carry
+	return result, borrow
 }
 
 func (b BigInt) ToHexString() string {
@@ -52,8 +61,8 @@ func (b BigInt) ToHexString() string {
 }
 
 func main() {
-	hexString1 := "FFFFFFFF"
-	hexString2 := "FFFFFFFF"
+	hexString1 := "FFFFFFfffff"
+	hexString2 := "123456ff123"
 
 	b1, err := HexToBigInt(hexString1)
 	if err != nil {
@@ -67,21 +76,9 @@ func main() {
 		return
 	}
 
-	fmt.Printf("BigInt1 parts: %v\n", b1.parts)
-	fmt.Printf("BigInt2 parts: %v\n", b2.parts)
-
-	result, carry := b1.Add(b2)
-
-	fmt.Printf("Сумма: %v\n", result.parts)
-	fmt.Printf("Перенос: %d\n", carry)
-
-	fmt.Printf("Полный результат (включая перенос):\n")
-	for i := 0; i < len(result.parts); i++ {
-		fmt.Printf("Part %d: %d\n", i, result.parts[i])
-	}
-	if carry > 0 {
-		fmt.Printf("Carry: %d\n", carry)
-	}
+	result, borrow := b1.Subb(b2)
+	fmt.Printf("Результат вычитания: %v\n", result.parts)
+	fmt.Printf("Заимствование: %d\n", borrow)
 
 	hexResult := result.ToHexString()
 	fmt.Printf("Результат в шестнадцатеричном формате: %s\n", hexResult)
