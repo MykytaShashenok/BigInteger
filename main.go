@@ -75,7 +75,7 @@ func main() {
 		fmt.Println("Error converting hex to BigInt:", err)
 		return
 	}
-
+	//  need checking
 	result, borrow := b1.Subb(b2)
 	fmt.Printf("Результат вычитания: %v\n", result.parts)
 	fmt.Printf("Заимствование: %d\n", borrow)
